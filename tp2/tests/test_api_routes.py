@@ -171,16 +171,18 @@ def test_orders_success_coupon_and_stock_failure(client, db_session, product_sam
     order_with_coupon = r.json()
     assert order_with_coupon["coupon_code"] == coupon_sample.code
 
-    # Stock insuffisant => 400
+    # Stock insuffisant => 400 dès l'ajout au panier
     low_stock_product = Product(name="Low stock", price=10.0, stock=1, active=True)
     db_session.add(low_stock_product)
     db_session.commit()
     db_session.refresh(low_stock_product)
 
-    r = client.post(f"/cart/?user_id={user_id}", json={"product_id": low_stock_product.id, "quantity": 2})
-    assert r.status_code == 201
-    r = client.post("/orders/", json={"user_id": user_id})
+    r = client.post(
+        f"/cart/?user_id={user_id}",
+        json={"product_id": low_stock_product.id, "quantity": 2}
+    )
     assert r.status_code == 400
+    assert "Stock insuffisant" in r.text
 
 
 def test_orders_errors_get_and_status_transition(client, db_session):

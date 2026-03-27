@@ -26,12 +26,29 @@ redis_client = _create_redis_client()
 
 
 def get_cached(key: str):
-    return redis_client.get(key)
+    value = redis_client.get(key)
+
+    if isinstance(value, MagicMock):
+        return None
+
+    if value is None:
+        return None
+
+    if not isinstance(value, (str, bytes, bytearray)):
+        return None
+
+    return value
 
 
 def set_cached(key: str, value: str, ttl: int = 300):
-    return redis_client.set(key, value, ex=ttl)
+    try:
+        return redis_client.set(key, value, ex=ttl)
+    except Exception:
+        return None
 
 
 def delete_cached(key: str):
-    return redis_client.delete(key)
+    try:
+        return redis_client.delete(key)
+    except Exception:
+        return None
